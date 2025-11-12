@@ -6,25 +6,37 @@ use App\Models\Post;
 use App\Models\Comment;
 use App\Http\Requests\StoreCommentRequest;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Http\JsonResponse;
 
 class CommentController extends Controller
 {
-    public function store(StoreCommentRequest $request, Post $post)
+    /**
+     * Store a new comment for a post (API)
+     */
+    public function store(StoreCommentRequest $request, Post $post): JsonResponse
     {
-        $post->comments()->create([
+        $comment = $post->comments()->create([
             'user_id' => $request->user()->id,
             'content' => $request->validated()['content'],
         ]);
 
-        return back()->with('success', 'Comment added successfully!');
+        return response()->json([
+            'message' => 'Comment added successfully!',
+            'comment' => $comment,
+        ], 201);
     }
 
-    public function destroy(Comment $comment)
+    /**
+     * Delete a comment (API)
+     */
+    public function destroy(Comment $comment): JsonResponse
     {
         Gate::authorize('delete', $comment);
 
         $comment->delete();
 
-        return back()->with('success', 'Comment deleted successfully!');
+        return response()->json([
+            'message' => 'Comment deleted successfully!',
+        ]);
     }
 }

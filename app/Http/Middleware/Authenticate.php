@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Middleware;
 
 use Closure;
@@ -11,7 +12,7 @@ class Authenticate
     public function handle(Request $request, Closure $next)
     {
         if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Please login to continue.');
+            return redirect('/login')->with('error', 'Please login to continue.');
         }
 
         return $next($request);

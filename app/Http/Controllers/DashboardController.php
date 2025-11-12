@@ -4,17 +4,29 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Post;
+use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
     /**
-     * Show the user dashboard with their posts.
+     * Show the user dashboard (API version).
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        // Fetch posts for the authenticated user, with comments count, newest first, paginated
-        $posts = \App\Models\Post::where('user_id', Auth::id())->withCount('comments')->latest()->paginate(10);
+        // Ensure the user is authenticated via Sanctum
+        $user = $request->user();
 
-        return view('dashboard', compact('posts'));
+        // Fetch posts for the authenticated user with comment counts, newest first, paginated
+        $posts = Post::where('user_id', $user->id)
+            ->withCount('comments')
+            ->latest()
+            ->paginate(10);
+
+        return response()->json([
+            'message' => 'Dashboard data fetched successfully.',
+            'user' => $user,
+            'posts' => $posts,
+        ]);
     }
 }
