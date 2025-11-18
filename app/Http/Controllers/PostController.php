@@ -7,14 +7,12 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
-    /**
-     * Display recent published posts (homepage-like data).
-     */
-    public function home(): JsonResponse
+    public function home()
     {
         $posts = Post::with('user')
             ->published()
@@ -22,87 +20,119 @@ class PostController extends Controller
             ->take(6)
             ->get();
 
-        return response()->json([
-            'message' => 'Latest published posts fetched successfully.',
-            'posts' => $posts,
-        ]);
+        return view('home', compact('posts'));
     }
 
-    /**
-     * Display paginated published posts.
-     */
-    public function index(): JsonResponse
+    public function index()
     {
         $posts = Post::with('user')
             ->published()
             ->latest('published_at')
             ->paginate(10);
 
-        return response()->json([
-            'message' => 'Posts fetched successfully.',
-            'posts' => $posts,
-        ]);
+        return view('posts.index', compact('posts'));
     }
 
-    /**
-     * Store a new post.
-     */
-    public function store(StorePostRequest $request): JsonResponse
+    public function create()
     {
-        $post = $request->user()->posts()->create($request->validated());
-
-        return response()->json([
-            'message' => 'Post created successfully!',
-            'post' => $post,
-        ], 201);
+        return view('posts.create');
     }
 
-    /**
-     * Display a single post (published or owned by user).
-     */
-    public function show(Post $post): JsonResponse
+    public function store(StorePostRequest $request)
+    {
+        $data = $request->validated();
+        
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('posts/images', 'public');
+            $data['media_type'] = 'image';
+        }
+        
+        // Handle video upload
+        if ($request->hasFile('video')) {
+            $data['video'] = $request->file('video')->store('posts/videos', 'public');
+            $data['media_type'] = 'video';
+        }
+        
+        $post = $request->user()->posts()->create($data);
+
+        return redirect('/posts/' . $post->slug)
+            ->with('success', 'Post created successfully!');
+    }
+
+    public function show(Post $post)
     {
         // Allow viewing unpublished posts only for the author
-        if (!$post->published && (!auth()->check() || auth()->id() !== $post->user_id)) {
-            return response()->json([
-                'message' => 'Post not found or not accessible.',
-            ], 404);
+        if (!$post->published && (!Auth::check() || Auth::id() !== $post->user_id)) {
+            abort(404);
         }
 
         $post->load(['user', 'comments.user']);
 
-        return response()->json([
-            'message' => 'Post fetched successfully.',
-            'post' => $post,
-        ]);
+        return view('posts.show', compact('post'));
     }
 
-    /**
-     * Update a post.
-     */
-    public function update(UpdatePostRequest $request, Post $post): JsonResponse
+    public function edit(Post $post)
     {
         Gate::authorize('update', $post);
 
-        $post->update($request->validated());
-
-        return response()->json([
-            'message' => 'Post updated successfully!',
-            'post' => $post,
-        ]);
+        return view('posts.edit', compact('post'));
     }
 
-    /**
-     * Delete a post.
-     */
-    public function destroy(Post $post): JsonResponse
+    public function update(UpdatePostRequest $request, Post $post)
+    {
+        Gate::authorize('update', $post);
+
+        $data = $request->validated();
+        
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image
+            if ($post->image && Storage::disk('public')->exists($post->image)) {
+                Storage::disk('public')->delete($post->image);
+            }
+            $data['image'] = $request->file('image')->store('posts/images', 'public');
+            $data['media_type'] = 'image';
+            $data['video'] = null; 
+        }
+        
+        // Handle video upload
+        if ($request->hasFile('video')) {
+            // Delete old video
+            if ($post->video && Storage::disk('public')->exists($post->video)) {
+                Storage::disk('public')->delete($post->video);
+            }
+            $data['video'] = $request->file('video')->store('posts/videos', 'public');
+            $data['media_type'] = 'video';
+            $data['image'] = null; 
+        }
+        
+        // Handle media removal
+        if ($request->has('remove_media') && $request->remove_media) {
+            if ($post->image && Storage::disk('public')->exists($post->image)) {
+                Storage::disk('public')->delete($post->image);
+            }
+            if ($post->video && Storage::disk('public')->exists($post->video)) {
+                Storage::disk('public')->delete($post->video);
+            }
+            $data['image'] = null;
+            $data['video'] = null;
+            $data['media_type'] = 'none';
+        }
+
+        $post->update($data);
+
+        return redirect('/posts/' . $post->slug)
+            ->with('success', 'Post updated successfully!');
+    }
+
+    public function destroy(Post $post)
     {
         Gate::authorize('delete', $post);
 
         $post->delete();
 
-        return response()->json([
-            'message' => 'Post deleted successfully!',
-        ]);
+        return redirect('/posts')
+            ->with('success', 'Post deleted successfully!');
     }
 }

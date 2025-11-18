@@ -4,6 +4,8 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -19,11 +21,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     
     // Dashboard
-    Route::get('/dashboard', function () {
-        $posts = auth()->user()->posts()->withCount('comments')->latest()->paginate(10);
-        return $posts;
-    });
-
+    Route::get('/dashboard', [AuthController::class, 'dashboard']);
+    
     // Post management - basic routing
     Route::post('/posts', [PostController::class, 'store']);
     Route::get('/posts/{post}/edit', [PostController::class, 'edit']);

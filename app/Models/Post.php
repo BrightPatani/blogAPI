@@ -1,12 +1,13 @@
-<?php
+<?php 
 
-
+// app/Models/Post.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Post extends Model
@@ -18,6 +19,9 @@ class Post extends Model
         'title',
         'slug',
         'content',
+        'image',        // Added
+        'video',        // Added
+        'media_type',   // Added
         'published',
         'published_at',
     ];
@@ -39,6 +43,16 @@ class Post extends Model
                 $post->slug = Str::slug($post->title);
             }
         });
+        
+        // Clean up media files when post is deleted
+        static::deleting(function ($post) {
+            if ($post->image && Storage::disk('public')->exists($post->image)) {
+                Storage::disk('public')->delete($post->image);
+            }
+            if ($post->video && Storage::disk('public')->exists($post->video)) {
+                Storage::disk('public')->delete($post->video);
+            }
+        });
     }
 
     public function user(): BelongsTo
@@ -56,5 +70,17 @@ class Post extends Model
         return $query->where('published', true)
                     ->whereNotNull('published_at')
                     ->where('published_at', '<=', now());
+    }
+    
+    // Helper method to get full image URL
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? asset('storage/' . $this->image) : null;
+    }
+    
+    // Helper method to get full video URL
+    public function getVideoUrlAttribute()
+    {
+        return $this->video ? asset('storage/' . $this->video) : null;
     }
 }

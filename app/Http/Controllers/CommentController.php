@@ -40,3 +40,4 @@ class CommentController extends Controller
         ]);
     }
 }
+
