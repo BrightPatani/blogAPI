@@ -19,9 +19,9 @@ class Post extends Model
         'title',
         'slug',
         'content',
-        'image',        // Added
-        'video',        // Added
-        'media_type',   // Added
+        'image',        
+        'video',        
+        'media_type',   
         'published',
         'published_at',
     ];

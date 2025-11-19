@@ -20,6 +20,8 @@ class StorePostRequest extends FormRequest
             'content' => ['required', 'string', 'min:10'],
             'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:5120'], // Max 5MB
             'video' => ['nullable', 'mimetypes:video/mp4,video/mpeg,video/quicktime,video/x-msvideo', 'max:51200'], // Max 50MB
+            'categories' => ['nullable', 'array'],
+            'categories.*' => ['exists:categories,id'],
             'published' => ['boolean'],
         ];
     }
@@ -32,6 +34,7 @@ class StorePostRequest extends FormRequest
             'image.max' => 'The image must not be larger than 5MB.',
             'video.mimetypes' => 'The video must be a file of type: mp4, mpeg, mov, avi.',
             'video.max' => 'The video must not be larger than 50MB.',
+            'categories.*.exists' => 'One or more selected categories do not exist.',
         ];
     }
 

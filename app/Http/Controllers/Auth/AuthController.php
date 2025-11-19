@@ -22,7 +22,7 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users', 'alpha_dash'], // Added username validation
+            'username' => ['required', 'string', 'max:255', 'unique:users', 'alpha_dash'], 
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Password::min(8)],
         ]);
@@ -49,7 +49,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'login' => ['required', 'string'], // Can be email or username
+            'login' => ['required', 'string'], 
             'password' => ['required'],
         ]);
 

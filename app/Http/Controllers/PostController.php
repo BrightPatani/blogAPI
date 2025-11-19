@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 namespace App\Http\Controllers;
 
@@ -6,8 +6,8 @@ use App\Models\Post;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
@@ -25,7 +25,7 @@ class PostController extends Controller
 
     public function index()
     {
-        $posts = Post::with('user')
+        $posts = Post::with(['user', 'categories'])
             ->published()
             ->latest('published_at')
             ->paginate(10);
@@ -35,7 +35,8 @@ class PostController extends Controller
 
     public function create()
     {
-        return view('posts.create');
+        $categories = \App\Models\Category::all();
+        return view('posts.create', compact('categories'));
     }
 
     public function store(StorePostRequest $request)
@@ -56,6 +57,11 @@ class PostController extends Controller
         
         $post = $request->user()->posts()->create($data);
 
+        // Attach categories to the post
+        if ($request->has('categories')) {
+            $post->categories()->attach($request->categories);
+        }
+
         return redirect('/posts/' . $post->slug)
             ->with('success', 'Post created successfully!');
     }
@@ -67,7 +73,7 @@ class PostController extends Controller
             abort(404);
         }
 
-        $post->load(['user', 'comments.user']);
+        $post->load(['user', 'comments.user', 'categories']);
 
         return view('posts.show', compact('post'));
     }
@@ -76,7 +82,8 @@ class PostController extends Controller
     {
         Gate::authorize('update', $post);
 
-        return view('posts.edit', compact('post'));
+        $categories = \App\Models\Category::all();
+        return view('posts.edit', compact('post', 'categories'));
     }
 
     public function update(UpdatePostRequest $request, Post $post)
@@ -93,7 +100,7 @@ class PostController extends Controller
             }
             $data['image'] = $request->file('image')->store('posts/images', 'public');
             $data['media_type'] = 'image';
-            $data['video'] = null; 
+            $data['video'] = null; // Remove video if uploading image
         }
         
         // Handle video upload
@@ -104,7 +111,7 @@ class PostController extends Controller
             }
             $data['video'] = $request->file('video')->store('posts/videos', 'public');
             $data['media_type'] = 'video';
-            $data['image'] = null; 
+            $data['image'] = null; // Remove image if uploading video
         }
         
         // Handle media removal
@@ -121,6 +128,13 @@ class PostController extends Controller
         }
 
         $post->update($data);
+
+        // Sync categories
+        if ($request->has('categories')) {
+            $post->categories()->sync($request->categories);
+        } else {
+            $post->categories()->detach();
+        }
 
         return redirect('/posts/' . $post->slug)
             ->with('success', 'Post updated successfully!');
