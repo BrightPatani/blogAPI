@@ -1,10 +1,12 @@
 <?php
 
-
 namespace App\Http\Controllers;
+
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
@@ -13,14 +15,10 @@ class CategoryController extends Controller
     {
         $categories = Category::withCount('posts')->latest()->paginate(15);
 
-        // Return JSON for API requests
-        if (request()->expectsJson()) {
-            return response()->json([
-                'categories' => $categories
-            ], 200);
-        }
-
-        return view('categories.index', compact('categories'));
+        return response()->json([
+            'success' => true,
+            'data' => $categories
+        ], 200);
     }
 
     // Show single category with its posts
@@ -32,21 +30,11 @@ class CategoryController extends Controller
             ->latest('published_at')
             ->paginate(10);
 
-        // Return JSON for API requests
-        if (request()->expectsJson()) {
-            return response()->json([
-                'category' => $category,
-                'posts' => $posts
-            ], 200);
-        }
-
-        return view('categories.show', compact('category', 'posts'));
-    }
-
-    // Show form to create new category (admin only)
-    public function create()
-    {
-        return view('categories.create');
+        return response()->json([
+            'success' => true,
+            'category' => $category,
+            'posts' => $posts
+        ], 200);
     }
 
     // Store new category
@@ -61,22 +49,11 @@ class CategoryController extends Controller
 
         $category = Category::create($validated);
 
-        // Return JSON for API requests
-        if ($request->expectsJson()) {
-            return response()->json([
-                'message' => 'Category created successfully',
-                'category' => $category
-            ], 201);
-        }
-
-        return redirect()->route('categories.index')
-            ->with('success', 'Category created successfully!');
-    }
-
-    // Show form to edit category
-    public function edit(Category $category)
-    {
-        return view('categories.edit', compact('category'));
+        return response()->json([
+            'success' => true,
+            'message' => 'Category created successfully',
+            'category' => $category
+        ], 201);
     }
 
     // Update category
@@ -93,16 +70,11 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
-        // Return JSON for API requests
-        if ($request->expectsJson()) {
-            return response()->json([
-                'message' => 'Category updated successfully',
-                'category' => $category
-            ], 200);
-        }
-
-        return redirect()->route('categories.index')
-            ->with('success', 'Category updated successfully!');
+        return response()->json([
+            'success' => true,
+            'message' => 'Category updated successfully',
+            'category' => $category
+        ], 200);
     }
 
     // Delete category
@@ -110,14 +82,9 @@ class CategoryController extends Controller
     {
         $category->delete();
 
-        // Return JSON for API requests
-        if (request()->expectsJson()) {
-            return response()->json([
-                'message' => 'Category deleted successfully'
-            ], 200);
-        }
-
-        return redirect()->route('categories.index')
-            ->with('success', 'Category deleted successfully!');
+        return response()->json([
+            'success' => true,
+            'message' => 'Category deleted successfully'
+        ], 200);
     }
 }
