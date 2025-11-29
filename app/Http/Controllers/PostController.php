@@ -8,9 +8,18 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+
+
 
 class PostController extends Controller
 {
+    public function __construct()
+    {
+        // Require authentication for store, update, and destroy
+        $this->middleware('auth:sanctum')->only(['store', 'update', 'destroy']);
+    }
+
     public function index()
     {
         $posts = Post::with(['user', 'categories'])
@@ -55,6 +64,14 @@ class PostController extends Controller
 
     public function show(Post $post)
     {
+        // Check if post is published OR if the user is the author
+       if (!$post->isPublished() && (!Auth::check() || Auth::id() !== $post->user_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Post not found'
+            ], 404);
+        }
+
         $post->load(['user', 'comments.user', 'categories']);
 
         return response()->json([
@@ -65,6 +82,14 @@ class PostController extends Controller
 
     public function update(UpdatePostRequest $request, Post $post)
     {
+        // Authorization: Only the post author can update
+        if ($request->user()->id !== $post->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to update this post'
+            ], 403);
+        }
+
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
@@ -109,8 +134,16 @@ class PostController extends Controller
         ]);
     }
 
-    public function destroy(Post $post)
+    public function destroy(Request $request, Post $post)
     {
+        // Authorization: Only the post author can delete
+        if ($request->user()->id !== $post->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized to delete this post'
+            ], 403);
+        }
+
         $post->delete();
 
         return response()->json([
