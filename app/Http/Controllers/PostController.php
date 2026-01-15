@@ -20,12 +20,21 @@ class PostController extends Controller
         $this->middleware('auth:sanctum')->only(['store', 'update', 'destroy']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::with(['user', 'categories'])
+        $query = Post::with(['user', 'categories'])
             ->published()
-            ->latest('published_at')
-            ->paginate(10);
+            ->latest('published_at');
+
+        // Filter by category if provided
+        if ($request->has('category')) {
+            $category = $request->query('category');
+            $query->whereHas('categories', function ($q) use ($category) {
+                $q->where('slug', $category);
+            });
+        }
+
+        $posts = $query->paginate(10);
 
         return response()->json([
             'success' => true,
