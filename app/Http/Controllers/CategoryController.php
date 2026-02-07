@@ -76,7 +76,7 @@ class CategoryController extends Controller
             'category' => $category
         ], 200);
     }
-
+ 
     // Delete category
     public function destroy(Category $category)
     {

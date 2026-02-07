@@ -17,7 +17,7 @@ class PostController extends Controller
     public function __construct()
     {
         // Require authentication for store, update, and destroy
-        $this->middleware('auth:sanctum')->only(['store', 'update', 'destroy']);
+        $this->middleware('auth:sanctum');
     }
 
     public function index(Request $request)
