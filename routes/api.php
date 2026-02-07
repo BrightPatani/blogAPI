@@ -8,6 +8,8 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
+    // Public routes
+  
 
     // Guest routes (authentication)
     Route::post('register', [AuthController::class, 'register']);
@@ -29,6 +31,8 @@ use Illuminate\Support\Facades\Route;
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/dashboard', [AuthController::class, 'dashboard']);
         // Post management - basic routing
+          Route::get('/posts', [PostController::class, 'index']);
+    Route::get('/posts/{post:slug}', [PostController::class, 'show']);
         Route::post('/posts', [PostController::class, 'store']);
         Route::get('/posts/{post}/edit', [PostController::class, 'edit']);
         Route::put('/posts/{post}', [PostController::class, 'update']);
