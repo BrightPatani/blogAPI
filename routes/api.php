@@ -25,14 +25,16 @@ use Illuminate\Support\Facades\Route;
     Route::get('/search-comments', [SearchController::class, 'searchComments']);
     Route::get('/search-categories', [SearchController::class, 'searchCategories']);
 
+    // public Post routes
+    Route::get('/posts', [PostController::class, 'index']);
+    Route::get('/posts/{post:slug}', [PostController::class, 'show']);
+
 
     // Authenticated routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/dashboard', [AuthController::class, 'dashboard']);
-        // Post management - basic routing
-          Route::get('/posts', [PostController::class, 'index']);
-    Route::get('/posts/{post:slug}', [PostController::class, 'show']);
+        // Post management - basic routing (auth required for create/update/delete)
         Route::post('/posts', [PostController::class, 'store']);
         Route::get('/posts/{post}/edit', [PostController::class, 'edit']);
         Route::put('/posts/{post}', [PostController::class, 'update']);

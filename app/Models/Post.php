@@ -27,13 +27,15 @@ class Post extends Model
         'published_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'published' => 'boolean',
-            'published_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'published' => 'boolean',
+        'published_at' => 'datetime',
+    ];
+
+    protected $appends = [
+        'image_url',
+        'video_url',
+    ];
 
     protected static function boot()
     {
@@ -76,6 +78,11 @@ class Post extends Model
         return $query->where('published', true)
                     ->whereNotNull('published_at')
                     ->where('published_at', '<=', now());
+    }
+    
+    public function isPublished(): bool
+    {
+        return (bool) ($this->published && $this->published_at && $this->published_at <= now());
     }
     
     // Helper method to get full image URL
