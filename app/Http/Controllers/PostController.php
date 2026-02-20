@@ -16,8 +16,8 @@ class PostController extends Controller
 {
     public function __construct()
     {
-        // Require authentication for store, update, and destroy
-        $this->middleware('auth:sanctum');
+        // Require authentication for store, update, and destroy only
+        $this->middleware('auth:sanctum')->only(['store', 'update', 'destroy']);
     }
 
     public function index(Request $request)
@@ -38,13 +38,29 @@ class PostController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $posts
+            'data' => $posts->items(),
+            'meta' => [
+                'current_page' => $posts->currentPage(),
+                'per_page' => $posts->perPage(),
+                'total' => $posts->total(),
+                'last_page' => $posts->lastPage(),
+                'from' => $posts->firstItem(),
+                'to' => $posts->lastItem(),
+            ],
         ]);
     }
 
     public function store(StorePostRequest $request)
     {
         $data = $request->validated();
+
+        // Default to published unless explicitly set to false
+        if (!array_key_exists('published', $data)) {
+            $data['published'] = true;
+            $data['published_at'] = now();
+        } elseif ($data['published'] && empty($data['published_at'])) {
+            $data['published_at'] = now();
+        }
 
         // upload image
         if ($request->hasFile('image')) {
@@ -100,6 +116,11 @@ class PostController extends Controller
         }
 
         $data = $request->validated();
+
+        // If publishing via update, ensure published_at is set
+        if (array_key_exists('published', $data) && $data['published'] && empty($data['published_at'])) {
+            $data['published_at'] = now();
+        }
 
         if ($request->hasFile('image')) {
             if ($post->image && Storage::disk('public')->exists($post->image)) {
